@@ -1,5 +1,5 @@
 # qoiparser
-A QOI Image format parser / converter written in C++
+A [QOI image format](https://qoiformat.org/) parser / converter written in C++ based on the [QOI file format specification]( https://qoiformat.org/qoi-specification.pdf)
 
 ## Build
 
