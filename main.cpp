@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         auto imageData = qoiparser::decode(inputFilePath);
         if(imageData) {
             stbi_write_png(outputFilePath.c_str(), imageData->width, imageData->height, imageData->channels,
-                           (void *) imageData->data, 0);
+                           (void *) imageData->data.data(), 0);
             std::cout << "Output file written to: " << outputFilePath << std::endl;
         } else {
             std::cerr << "Failed decoding file..." << std::endl;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Encoding: " << inputFilePath << " ..." << std::endl;
         auto outBuffer = qoiparser::encode(inputFilePath);
         if(outBuffer) {
-            outFileStream.write((const char*)outBuffer->data, outBuffer->size);
+            outFileStream.write((const char*)outBuffer->data.data(), outBuffer->data.size());
             std::cout << "Output file written to: " << outputFilePath << std::endl;
         } else {
             std::cerr << "Failed encoding file..." << std::endl;

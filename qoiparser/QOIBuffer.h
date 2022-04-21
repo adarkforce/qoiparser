@@ -14,8 +14,6 @@ namespace qoiparser {
     private:
         size_t maxSize;
 
-
-
         void write_32(const uint32_t &v) {
 
             uint8_t v1 = (0xff000000 & v) >> 24;
@@ -32,35 +30,29 @@ namespace qoiparser {
 
         static uint32_t swapEndian(uint32_t val) {
 
-            uint32_t res =
-                    ((val & 0x000000FF) << 24) |
+            return ((val & 0x000000FF) << 24) |
                     ((val & 0x0000FF00) << 8) |
                     ((val & 0x00FF0000) >> 8) |
                     ((val & 0xFF000000) >> 24);
 
-            return res;
         }
 
     public:
         size_t bytesRead = 0;
+        size_t bytesWritten = 0;
 
-        uint8_t *data;
-        size_t size;
+        std::vector<uint8_t> data;
 
-        explicit QOIBuffer(size_t _size = 0): maxSize(_size), size(0) {
-            data = (uint8_t *) malloc(_size);
-        }
-
-        ~QOIBuffer() {
-            delete data;
+        explicit QOIBuffer(size_t _size = 0): maxSize(_size) {
+            data.resize(_size);
         }
 
         void write(void *source, size_t itemSize) {
-            if (size + itemSize > maxSize) {
-                data = (uint8_t *) realloc(data, size + itemSize);
+            if (bytesWritten + itemSize > maxSize) {
+                data.resize(bytesWritten + itemSize);
             }
-            memcpy(data + size, source, itemSize);
-            size += itemSize;
+            memcpy(&data[bytesWritten], source, itemSize);
+            bytesWritten += itemSize;
         }
 
         void writeHeader(const uint32_t& width, const uint32_t& height, bool hasAlpha, bool sRGB) {
@@ -124,11 +116,11 @@ namespace qoiparser {
         void writeEnd() {
             BUFFER_VIEWS::QOI_STREAM_END end;
             write(&end, sizeof(BUFFER_VIEWS::QOI_STREAM_END));
-            data = (uint8_t *) realloc(data, size);
+            data.resize(bytesWritten);
         }
 
         const BUFFER_VIEWS::QOI_HEADER* readHeader() {
-            auto h = reinterpret_cast<BUFFER_VIEWS::QOI_HEADER*>(data);
+            auto h = reinterpret_cast<BUFFER_VIEWS::QOI_HEADER*>(&data[0]);
             if( h->magic[0] == 'q' &&
                 h->magic[1] == 'o' &&
                 h->magic[2] == 'i' &&
@@ -142,7 +134,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_RGBA* readRGBA() {
-            auto qoi_rgba = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RGBA*>(data + bytesRead);
+            auto qoi_rgba = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RGBA*>(&data[bytesRead]);
             if(qoi_rgba->tag == RGBA_TAG) {
                 bytesRead += sizeof (BUFFER_VIEWS::QOI_OP_RGBA);
                 return qoi_rgba;
@@ -152,7 +144,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_RGB* readRGB() {
-            auto qoi_rgb = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RGB*>(data + bytesRead);
+            auto qoi_rgb = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RGB*>(&data[bytesRead]);
             if(qoi_rgb->tag == RGB_TAG) {
                 bytesRead += sizeof(BUFFER_VIEWS::QOI_OP_RGB);
                 return qoi_rgb;
@@ -162,7 +154,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_INDEX* readIndex() {
-            auto qoi_index = reinterpret_cast<BUFFER_VIEWS::QOI_OP_INDEX*>(data + bytesRead);
+            auto qoi_index = reinterpret_cast<BUFFER_VIEWS::QOI_OP_INDEX*>(&data[bytesRead]);
             if(qoi_index->tag == INDEX_TAG) {
                 bytesRead += sizeof (BUFFER_VIEWS::QOI_OP_INDEX);
                 return qoi_index;
@@ -172,7 +164,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_DIFF* readDiff() {
-            auto qoi_diff = reinterpret_cast<BUFFER_VIEWS::QOI_OP_DIFF*>(data + bytesRead);
+            auto qoi_diff = reinterpret_cast<BUFFER_VIEWS::QOI_OP_DIFF*>(&data[bytesRead]);
             if(qoi_diff->tag == DIFF_TAG) {
                 bytesRead += sizeof (BUFFER_VIEWS::QOI_OP_DIFF);
                 return qoi_diff;
@@ -182,7 +174,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_LUMA* readLuma() {
-            auto qoi_luma = reinterpret_cast<BUFFER_VIEWS::QOI_OP_LUMA*>(data + bytesRead);
+            auto qoi_luma = reinterpret_cast<BUFFER_VIEWS::QOI_OP_LUMA*>(&data[bytesRead]);
             if(qoi_luma->tag == LUMA_TAG) {
                 bytesRead += sizeof (BUFFER_VIEWS::QOI_OP_LUMA);
                 return qoi_luma;
@@ -192,7 +184,7 @@ namespace qoiparser {
         }
 
         const BUFFER_VIEWS::QOI_OP_RUN* readRun() {
-            auto qoi_run = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RUN*>(data + bytesRead);
+            auto qoi_run = reinterpret_cast<BUFFER_VIEWS::QOI_OP_RUN*>(&data[bytesRead]);
             if(qoi_run->tag == RUN_TAG) {
                 bytesRead += sizeof(BUFFER_VIEWS::QOI_OP_RUN);
                 return qoi_run;
@@ -202,7 +194,7 @@ namespace qoiparser {
         }
 
         const uint64_t* readEnd() {
-            auto end = reinterpret_cast<uint64_t*>(data + bytesRead);
+            auto end = reinterpret_cast<uint64_t*>(&data[bytesRead]);
             if ( *end == STREAM_END ) {
                 bytesRead += sizeof(uint64_t);
                 return end;
