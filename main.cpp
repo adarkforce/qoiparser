@@ -14,11 +14,11 @@ int main(int argc, char *argv[]) {
 
     argparse::ArgumentParser program("qoiparser");
 
-    program.add_argument("i")
+    program.add_argument("-i")
             .default_value(std::string("out.qoi"))
             .help("Input file path");
 
-    program.add_argument("o")
+    program.add_argument("-o")
             .default_value(std::string("out.png"))
             .help("Output file path");
 
@@ -33,6 +33,11 @@ int main(int argc, char *argv[]) {
 
     auto inputFilePath = program.get<std::string>("i");
     auto outputFilePath = program.get<std::string>("o");
+
+    if(!std::filesystem::exists(inputFilePath)) {
+        std::cerr << "Input file " << "\"" << inputFilePath << "\"" <<  " not found " << std::endl;
+        std::exit(1);
+    }
 
     std::ofstream outFileStream(outputFilePath.c_str(), std::ios::out | std::ios::binary);
 
